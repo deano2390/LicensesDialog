@@ -16,6 +16,8 @@
 
 package de.psdev.licensesdialog;
 
+import android.content.Context;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -83,7 +85,7 @@ public final class LicenseResolver {
         if (sLicenses.containsKey(trimmedLicense)) {
             return sLicenses.get(trimmedLicense);
         } else {
-            throw new IllegalStateException(String.format("no such license available: %s, did you forget to register it?", trimmedLicense));
+            return null;
         }
     }
 

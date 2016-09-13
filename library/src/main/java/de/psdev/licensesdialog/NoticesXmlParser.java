@@ -22,7 +22,10 @@ import java.io.InputStream;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
+import android.content.Context;
 import android.util.Xml;
+
+import de.psdev.licensesdialog.licenses.CustomLicense;
 import de.psdev.licensesdialog.licenses.License;
 import de.psdev.licensesdialog.model.Notice;
 import de.psdev.licensesdialog.model.Notices;
@@ -63,12 +66,19 @@ public final class NoticesXmlParser {
     }
 
     private static Notice readNotice(final XmlPullParser parser) throws IOException,
-        XmlPullParserException {
+            XmlPullParserException {
         parser.require(XmlPullParser.START_TAG, null, "notice");
         String name = null;
         String url = null;
         String copyright = null;
         License license = null;
+
+        // for custom license
+        String licenseName = null;
+        String licenseSummary = null;
+        String licenseBody = null;
+        String licenseVersion = "";
+
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.getEventType() != XmlPullParser.START_TAG) {
                 continue;
@@ -82,10 +92,34 @@ public final class NoticesXmlParser {
                 copyright = readCopyright(parser);
             } else if ("license".equals(element)) {
                 license = readLicense(parser);
+            } else if ("licenseName".equals(element)) {
+                licenseName = readTag(parser, "licenseName");
+            } else if ("licenseSummary".equals(element)) {
+                licenseSummary = readTag(parser, "licenseSummary");
+            } else if ("licenseBody".equals(element)) {
+                licenseBody = readTag(parser, "licenseBody");
+            } else if ("licenseVersion".equals(element)) {
+                licenseVersion = readTag(parser, "licenseVersion");
             } else {
                 skip(parser);
             }
         }
+
+        if (license == null) {
+
+            if(licenseName == null || licenseBody == null){
+                throw new IllegalStateException("License not found and no custom licensew defined");
+            }
+            
+            license = new CustomLicense(
+                    licenseName,
+                    licenseSummary,
+                    licenseBody,
+                    licenseVersion,
+                    url
+            );
+        }
+
         return new Notice(name, url, copyright, license);
     }
 
@@ -99,6 +133,10 @@ public final class NoticesXmlParser {
 
     private static String readCopyright(final XmlPullParser parser) throws IOException, XmlPullParserException {
         return readTag(parser, "copyright");
+    }
+
+    private static String readBody(final XmlPullParser parser) throws IOException, XmlPullParserException {
+        return readTag(parser, "body");
     }
 
     private static License readLicense(final XmlPullParser parser) throws IOException, XmlPullParserException {
